@@ -26,9 +26,13 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+unsigned int loadTexture(const char *path,  bool gammaCorrection);
+
+void drawPlane(Shader shader, unsigned int planeVAO, unsigned int floorTexture);
+
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 900;
 
 // camera
 
@@ -60,7 +64,7 @@ struct ProgramState {
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
+            : camera(glm::vec3(0.0f, 1.0f, 5.0f)) {}
 
     void SaveToFile(std::string filename);
 
@@ -140,7 +144,7 @@ int main() {
     stbi_set_flip_vertically_on_load(true);
 
     programState = new ProgramState;
-    programState->LoadFromFile("resources/program_state.txt");
+    //programState->LoadFromFile("resources/program_state.txt");
     if (programState->ImGuiEnabled) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
@@ -155,18 +159,51 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
+
+    // vertex data for plane and skybox
+
+    float planeVertices[] = {
+            // positions                     // normals                       // texcoords
+            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,      1.0f,  0.0f,
+            -1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+            1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
+    };
+
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader lightingShader("resources/shaders/model_lighting_bf.vs", "resources/shaders/model_lighting_bf.fs");
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+    Model egyptModel("resources/objects/egypt/objColumn.obj");
+    egyptModel.SetShaderTextureNamePrefix("material.");
+
+    // load textures
+    // -------------
+    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/sand.jpg").c_str(), true);
+
+    // plane VAO
+    unsigned int planeVAO, planeVBO;
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glBindVertexArray(0);
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -177,8 +214,6 @@ int main() {
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
-
-
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -203,36 +238,47 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
-        ourShader.use();
+        lightingShader.use();
+        lightingShader.setVec3("viewPosition", programState->camera.Position);
+        lightingShader.setFloat("material.shininess", 32.0f);
+
+        // directional light
+        lightingShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        lightingShader.setVec3("dirLight.ambient", 0.5f, 0.5f, 0.5f);
+        lightingShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        lightingShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+
+        // point light
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+        lightingShader.setVec3("pointLight.position", pointLight.position);
+        lightingShader.setVec3("pointLight.ambient", pointLight.ambient);
+        lightingShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        lightingShader.setVec3("pointLight.specular", pointLight.specular);
+        lightingShader.setFloat("pointLight.constant", pointLight.constant);
+        lightingShader.setFloat("pointLight.linear", pointLight.linear);
+        lightingShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+
+
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
 
-        // render the loaded model
+        drawPlane(lightingShader, planeVAO, floorTexture);
+
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+
+        // render egypt statue model
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model,
                                programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        model = glm::scale(model, glm::vec3(0.5f));    // it's a bit too big for our scene, so scale it down
+        lightingShader.setMat4("model", model);
+        egyptModel.Draw(lightingShader);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
-
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -249,6 +295,66 @@ int main() {
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorTexture) {
+    glm::mat4 model = glm::mat4(1.0f);
+
+    model = glm::translate(model, glm::vec3(0.0f, 2.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(5.0f));
+    lightingShader.setMat4("model", model);
+    glBindVertexArray(planeVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const * path, bool gammaCorrection) {
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum internalFormat;
+        GLenum dataFormat;
+        if (nrComponents == 1)
+        {
+            internalFormat = dataFormat = GL_RED;
+        }
+        else if (nrComponents == 3)
+        {
+            internalFormat = gammaCorrection ? GL_SRGB : GL_RGB;
+            dataFormat = GL_RGB;
+        }
+        else if (nrComponents == 4)
+        {
+            internalFormat = gammaCorrection ? GL_SRGB_ALPHA : GL_RGBA;
+            dataFormat = GL_RGBA;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, dataFormat, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
