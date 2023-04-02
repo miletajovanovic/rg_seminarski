@@ -32,6 +32,10 @@ void drawPlane(Shader shader, unsigned int planeVAO, unsigned int floorTexture);
 
 unsigned int loadCubemap(vector<std::string> faces);
 
+void drawStatue(Shader shader, Model modelStatue);
+
+void drawRing(Shader shader, Model modelRing);
+
 void drawSkybox(Shader skyboxShader, glm::mat4 view, glm::mat4 projection, unsigned int skyboxVAO, unsigned int cubemapTexture);
 
 
@@ -65,8 +69,6 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 1.0f, 5.0f)) {}
@@ -169,13 +171,13 @@ int main() {
 
     float planeVertices[] = {
             // positions                     // normals                       // texcoords
-            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,      1.0f,  0.0f,
-            -1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,      7.0f,  0.0f,
+            -1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 7.0f,
 
-            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-            1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
+            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  7.0f,  0.0f,
+            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 7.0f,
+            1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  7.0f, 7.0f
     };
 
     float skyboxVertices[] = {
@@ -264,10 +266,13 @@ int main() {
     Model egyptModel("resources/objects/egypt/objColumn.obj");
     egyptModel.SetShaderTextureNamePrefix("material.");
 
+    Model ringModel("resources/objects/ring/11.obj");
+    ringModel.SetShaderTextureNamePrefix("material.");
+
     // load textures
     // -------------
 
-    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/sand.jpg").c_str(), true);
+    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/marble.jpg").c_str(), true);
 
     vector<std::string> faces
             {
@@ -289,16 +294,6 @@ int main() {
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
-
-    PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -325,23 +320,22 @@ int main() {
         // don't forget to enable shader before setting uniforms
         lightingShader.use();
         lightingShader.setVec3("viewPosition", programState->camera.Position);
-        lightingShader.setFloat("material.shininess", 32.0f);
+        lightingShader.setFloat("material.shininess", 128.0f);
 
         // directional light
-        lightingShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-        lightingShader.setVec3("dirLight.ambient", 0.5f, 0.5f, 0.5f);
+        lightingShader.setVec3("dirLight.direction", 0.4f, -1.0f, -0.4f);
+        lightingShader.setVec3("dirLight.ambient", 0.1f, 0.1f, 0.1f);
         lightingShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
         lightingShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
 
         // point light
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        lightingShader.setVec3("pointLight.position", pointLight.position);
-        lightingShader.setVec3("pointLight.ambient", pointLight.ambient);
-        lightingShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        lightingShader.setVec3("pointLight.specular", pointLight.specular);
-        lightingShader.setFloat("pointLight.constant", pointLight.constant);
-        lightingShader.setFloat("pointLight.linear", pointLight.linear);
-        lightingShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        lightingShader.setVec3("pointLight.position", glm::vec3(0.0f, 0.5f, 1.2f));
+        lightingShader.setVec3("pointLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+        lightingShader.setVec3("pointLight.diffuse", glm::vec3(0.3f, 0.3f, 0.3f));
+        lightingShader.setVec3("pointLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+        lightingShader.setFloat("pointLight.constant", 1.0f);
+        lightingShader.setFloat("pointLight.linear", 0.09f);
+        lightingShader.setFloat("pointLight.quadratic", 0.032f);
 
 
         // view/projection transformations
@@ -352,15 +346,14 @@ int main() {
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
 
+        lightingShader.setFloat("material.shininess", 32.0f);
         drawPlane(lightingShader, planeVAO, floorTexture);
+        drawRing(lightingShader, ringModel);
+        lightingShader.setFloat("material.shininess", 128.0f);
 
-        // render egypt statue model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.5f));    // it's a bit too big for our scene, so scale it down
-        lightingShader.setMat4("model", model);
-        egyptModel.Draw(lightingShader);
+        drawStatue(lightingShader, egyptModel);
+
+
 
         drawSkybox(skyboxShader, view, projection, skyboxVAO, cubemapTexture);
 
@@ -430,7 +423,7 @@ unsigned int loadCubemap(vector<std::string> faces)
 void drawSkybox(Shader skyboxShader, glm::mat4 view, glm::mat4 projection, unsigned int skyboxVAO, unsigned int cubemapTexture)
 {
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-    //glDepthMask(GL_FALSE);
+    glDepthMask(GL_FALSE);
 
     skyboxShader.use();
     view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
@@ -443,16 +436,39 @@ void drawSkybox(Shader skyboxShader, glm::mat4 view, glm::mat4 projection, unsig
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-    //glDepthMask(GL_TRUE);
+    glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS); // set depth function back to default
+}
+
+void drawStatue(Shader shader, Model modelStatue) {
+    // render egypt statue model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.5f));    // it's a bit too big for our scene, so scale it down
+    shader.setMat4("model", model);
+    modelStatue.Draw(shader);
+}
+
+void drawRing(Shader shader, Model modelRing) {
+    // render egypt statue model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.4f, 1.0f)); // translate it down so it's at the center of the scene
+    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)); // rotate the model matrix 90 degrees around the z-axis
+
+    model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 1.0f, 0.0f)); // rotate around the y-axis by the updated angle
+
+    model = glm::scale(model, glm::vec3(0.03f));    // it's a bit too big for our scene, so scale it down
+    shader.setMat4("model", model);
+    modelRing.Draw(shader);
 }
 
 void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorTexture) {
     glm::mat4 model = glm::mat4(1.0f);
 
-    model = glm::translate(model, glm::vec3(0.0f, 2.5f, 0.0f));
-    model = glm::scale(model, glm::vec3(5.0f));
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(7.0f));
     lightingShader.setMat4("model", model);
+
     glBindVertexArray(planeVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, floorTexture);
@@ -568,12 +584,7 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
-        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
         ImGui::End();
     }
 
