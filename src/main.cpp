@@ -53,6 +53,9 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+bool spotlightOn = false;
+bool spotlightOnKey = false;
+
 struct PointLight {
     glm::vec3 position;
     glm::vec3 ambient;
@@ -330,13 +333,25 @@ int main() {
 
         // point light
         lightingShader.setVec3("pointLight.position", glm::vec3(0.0f, 0.5f, 1.2f));
-        lightingShader.setVec3("pointLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+        lightingShader.setVec3("pointLight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
         lightingShader.setVec3("pointLight.diffuse", glm::vec3(0.3f, 0.3f, 0.3f));
-        lightingShader.setVec3("pointLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+        lightingShader.setVec3("pointLight.specular", glm::vec3(0.9f, 0.9f, 0.9f));
         lightingShader.setFloat("pointLight.constant", 1.0f);
         lightingShader.setFloat("pointLight.linear", 0.09f);
         lightingShader.setFloat("pointLight.quadratic", 0.032f);
 
+        // spotLight
+        lightingShader.setVec3("spotLight.position", programState->camera.Position);
+        lightingShader.setVec3("spotLight.direction", programState->camera.Front);
+        lightingShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+        lightingShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setFloat("spotLight.constant", 1.0f);
+        lightingShader.setFloat("spotLight.linear", 0.09f);
+        lightingShader.setFloat("spotLight.quadratic", 0.032f);
+        lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(15.0f)));
+        lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5f)));
+        lightingShader.setBool("spotlightOn", spotlightOn);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
@@ -346,7 +361,7 @@ int main() {
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
 
-        lightingShader.setFloat("material.shininess", 32.0f);
+        lightingShader.setFloat("material.shininess", 16.0f);
         drawPlane(lightingShader, planeVAO, floorTexture);
         drawRing(lightingShader, ringModel);
         lightingShader.setFloat("material.shininess", 128.0f);
@@ -537,6 +552,14 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !spotlightOnKey)
+    {
+        spotlightOn = !spotlightOn;
+        spotlightOnKey = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
+        spotlightOnKey = false;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
