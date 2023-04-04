@@ -15,6 +15,7 @@ Moving:<br>
    
 <br>
 Ambient manipulation:
+<br>
 `F` - turn on/off flashlight
 
 `B` - turn on/off bloom
