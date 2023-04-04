@@ -242,6 +242,7 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+
     //glDepthFunc(GL_LESS);
 
     // plane VAO
@@ -392,6 +393,7 @@ int main() {
 
         lightingShader.setFloat("material.shininess", 16.0f);
         drawPlane(lightingShader, planeVAO, floorTexture);
+
         drawRing(lightingShader, ringModel);
         lightingShader.setFloat("material.shininess", 128.0f);
 
@@ -485,15 +487,18 @@ void drawSkybox(Shader skyboxShader, glm::mat4 view, glm::mat4 projection, unsig
 }
 
 void drawStatue(Shader shader, Model modelStatue) {
+    glEnable(GL_CULL_FACE);
     // render egypt statue model
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.0f)); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(0.5f));    // it's a bit too big for our scene, so scale it down
     shader.setMat4("model", model);
     modelStatue.Draw(shader);
+    glDisable(GL_CULL_FACE);
 }
 
 void drawRing(Shader shader, Model modelRing) {
+    glEnable(GL_CULL_FACE);
     // render egypt statue model
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.4f, 1.0f)); // translate it down so it's at the center of the scene
@@ -504,12 +509,16 @@ void drawRing(Shader shader, Model modelRing) {
     model = glm::scale(model, glm::vec3(0.03f));    // it's a bit too big for our scene, so scale it down
     shader.setMat4("model", model);
     modelRing.Draw(shader);
+    glDisable(GL_CULL_FACE);
 }
 
 void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorTexture) {
     glm::mat4 model = glm::mat4(1.0f);
 
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
     model = glm::scale(model, glm::vec3(7.0f));
     lightingShader.setMat4("model", model);
 
