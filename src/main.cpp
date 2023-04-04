@@ -49,7 +49,7 @@ bool hdr = true;
 bool bloom = true;
 bool hdrKeyPressed = false;
 bool bloomKeyPressed = false;
-float exposure = 1.0f;
+float exposure = 0.8f;
 
 // camera
 
@@ -269,7 +269,7 @@ int main() {
     // -------------
 
     unsigned int grassTexture = loadTexture(FileSystem::getPath("resources/textures/grass.png").c_str(), false);
-    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/marble.jpg").c_str(), false);
+    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/dirt.jpg").c_str(), false);
 
     vector<std::string> faces
             {
@@ -437,9 +437,9 @@ int main() {
         // point light
         lightingShader.setVec3("pointLight.position", glm::vec3(0.0f, 0.5f, 1.2f));
         lightingShader.setVec3("pointLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
-        lightingShader.setVec3("pointLight.diffuse", glm::vec3(0.2f, 0.2f, 0.2f));
-        lightingShader.setVec3("pointLight.specular", glm::vec3(0.01f, 0.01f, 0.01f));
-        lightingShader.setFloat("pointLight.constant", 1.0f);
+        lightingShader.setVec3("pointLight.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
+        lightingShader.setVec3("pointLight.specular", glm::vec3(0.1f, 0.1f, 0.1f));
+        lightingShader.setFloat("pointLight.constant", 0.5f);
         lightingShader.setFloat("pointLight.linear", 0.09f);
         lightingShader.setFloat("pointLight.quadratic", 0.032f);
 
@@ -463,10 +463,9 @@ int main() {
 
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
-
-        lightingShader.setFloat("material.shininess", 16.0f);
         drawPlane(lightingShader, planeVAO, floorTexture);
 
+        lightingShader.setFloat("material.shininess", 32.0f);
         drawRing(lightingShader, ringModel);
         lightingShader.setFloat("material.shininess", 128.0f);
 
@@ -644,9 +643,12 @@ void drawRing(Shader shader, Model modelRing) {
     model = glm::scale(model, glm::vec3(0.03f));    // it's a bit too big for our scene, so scale it down
     shader.setMat4("model", model);
     modelRing.Draw(shader);
+    glDisable(GL_CULL_FACE);
 }
 
 void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorTexture) {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
     glm::mat4 model = glm::mat4(1.0f);
 
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -661,6 +663,9 @@ void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorT
     glBindTexture(GL_TEXTURE_2D, floorTexture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
 }
 
 void drawGrass(Shader shader, unsigned int VAO, unsigned int texture) {
@@ -683,7 +688,13 @@ void drawGrass(Shader shader, unsigned int VAO, unsigned int texture) {
         glm::vec3( 2.5f, y_coor, -1.0f),
         glm::vec3( 2.0f, y_coor, 1.5f),
         glm::vec3 (1.5f, y_coor, -0.6f),
-        glm::vec3 (-2.0f, y_coor, 1.4f)
+        glm::vec3 (-2.0f, y_coor, 1.4f),
+        glm::vec3 (1.9f, y_coor, 1.6f),
+        glm::vec3( -3.7f, y_coor, 4.0f),
+        glm::vec3 (-1.9f, y_coor, -1.6f),
+        glm::vec3( -3.7f, y_coor, -4.0f),
+        glm::vec3 (1.9f, y_coor, 1.6f),
+        glm::vec3( 3.7f, y_coor, 4.0f),
     };
 
     for (unsigned int i = 0; i < vegetation.size(); i++) {
