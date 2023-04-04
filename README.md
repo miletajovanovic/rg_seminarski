@@ -2,6 +2,9 @@
 
 A magic rotating ring in front of an ancient statue.
 
+# Photos
+![](photos/statue.png)
+<br>
 # Keyboard instructions:
 
 Moving:<br>
