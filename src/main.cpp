@@ -183,13 +183,13 @@ int main() {
 
     float planeVertices[] = {
             // positions                     // normals                       // texcoords
-            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,      7.0f,  0.0f,
+            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,      1000.0f,  0.0f,
             -1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 7.0f,
+            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1000.0f,
 
-            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  7.0f,  0.0f,
-            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 7.0f,
-            1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  7.0f, 7.0f
+            1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1000.0f,  0.0f,
+            -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1000.0f,
+            1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  1000.0f, 1000.0f
     };
 
     float skyboxVertices[] = {
@@ -655,7 +655,7 @@ void drawPlane(Shader lightingShader, unsigned int planeVAO, unsigned int floorT
 
     model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    model = glm::scale(model, glm::vec3(7.0f));
+    model = glm::scale(model, glm::vec3(1000.0f));
     lightingShader.setMat4("model", model);
 
     glBindVertexArray(planeVAO);
