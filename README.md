@@ -2,9 +2,11 @@
 
 A magic rotating ring in front of an ancient statue.
 
-# Photos
+# Gallery
 ![](photos/statue.png)
-<br>
+
+# Video
+https://www.youtube.com/watch?v=QGkNM4ztkHg
 # Keyboard instructions:
 
 Moving:<br>
